@@ -9,11 +9,18 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 /**
- * @author Dionysios Stolis 9/27/2020 <dstolis@gmail.com>
+ * @author Dionysios Stolis 9/27/2020 <dionstol@gmail.com>
  */
 public class Blockchain implements Serializable {
     
     private List<Block> blocks;
+
+    private int proof;
+
+    {
+        System.out.println("Enter how many zeros the hash must starts with:");
+        proof =  new Scanner(System.in).nextInt();
+    }
 
     public Blockchain() {
         try {
@@ -22,13 +29,6 @@ public class Blockchain implements Serializable {
         } catch (IOException | ClassNotFoundException e) {
             this.blocks = new ArrayList<>();
         }
-    }
-
-    private int proof;
-
-    {
-        System.out.println("Enter how many zeros the hash must starts with:");
-        proof =  new Scanner(System.in).nextInt();
     }
 
     public void createBlock() {

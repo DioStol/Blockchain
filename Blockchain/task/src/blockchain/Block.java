@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 /**
- * @author Dionysios Stolis 9/27/2020 <dstolis@gmail.com>
+ * @author Dionysios Stolis 9/27/2020 <dionstol@gmail.com>
  */
 public class Block implements Serializable {
 

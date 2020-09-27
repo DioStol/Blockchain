@@ -3,7 +3,7 @@ package blockchain;
 import java.io.*;
 
 /**
- * @author Dionysios Stolis 9/27/2020 <dstolis@gmail.com>
+ * @author Dionysios Stolis 9/27/2020 <dionstol@gmail.com>
  */
 public class SerializationUtils {
 
