@@ -33,6 +33,36 @@ public class Blockchain implements Serializable {
         this.numZeros = new AtomicInteger(0);
     }
 
+    public boolean addBlock(Block block){
+        synchronized (lockAdd){
+            if (validate(block)){
+                blockChain.add(block);
+                currentId.incrementAndGet();
+                // TODO Refactor Block class, add getter for proof and info subclass
+            }
+        }
+    }
+
+    private boolean validate(Block block){
+        if (blockChain.isEmpty() && block.getPrevHash().equals("0")){
+            return true;
+        }
+
+        String zeros = new String(new char[numZeros.get()]).replace("\0","0");
+        String bcPrevHash = getLastHash();
+        String blockHash = block.getHash();
+        String bPrevHash = block.getPrevHash();
+        return blockHash.startsWith(zeros) && bPrevHash.equals(bcPrevHash);
+    }
+
+    private String getLastHash() {
+        return getSize() == 0 ? "0" : blockChain.get(getSize() - 1).getHash();
+    }
+
+    public synchronized int getSize() {
+        return blockChain.size();
+    }
+
     private ExecutorService executor;
 
     private int proof;
