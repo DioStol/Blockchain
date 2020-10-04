@@ -1,98 +1,122 @@
 package blockchain;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author Dionysios Stolis 9/27/2020 <dionstol@gmail.com>
  */
-public class Block implements Serializable {
+public class Block {
 
-    private static MessageDigest digest;
-
-    static {
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private long id;
-    private long ts;
-    private String prevHash;
-    private int magicNum;
     private String hash;
+    private final String prevHash;
+    private final int id;
+    private final long timeStamp;
+    private int magicNumber;
+    private int proofOfWork;
+    private final int numZeros;
+    private final String minerName;
+    private String zerosInfo;
 
-    public Block(long id, long ts, String prevHash, int proof) {
+    public Block(int numZeros, int id, String prevHash) {
+        this.numZeros = numZeros;
         this.id = id;
-        this.ts = ts;
         this.prevHash = prevHash;
-        this.hash = generateHash(proof, ts);
+        timeStamp = System.currentTimeMillis();
+        this.minerName = Thread.currentThread().getName().substring(14);
+        hash();
     }
 
-    public long getId() {
-        return id;
+    private void hash() {
+        String zeros = new String(new char[numZeros]).replace("\0", "0");
+        long t0 = System.currentTimeMillis();
+        do {
+            magicNumber = ThreadLocalRandom.current().nextInt();
+            hash = applySha256(getString() + magicNumber);
+        } while (!hash.startsWith(zeros));
+        proofOfWork = (int) (System.currentTimeMillis() - t0) / 1000;
     }
 
-    public long getTs() {
-        return ts;
+    private String getString() {
+        return id + timeStamp + prevHash;
     }
 
-    public String getPrevHash() {
-        return prevHash;
+    public String applySha256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashByte = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte elem : hashByte) {
+                String hex = Integer.toHexString(elem & 0xff);
+                if (hex.length() == 1) {
+                    hexString.append("0");
+                }
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     public String getHash() {
         return hash;
     }
 
+    public String getPrevHash() {
+        return prevHash;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public long getTimeStamp() {
+        return timeStamp;
+    }
+
+    public int getMagicNumber() {
+        return magicNumber;
+    }
+
+    public int getProofOfWork() {
+        return proofOfWork;
+    }
+
+    public String getMinerName() {
+        return minerName;
+    }
+
+    public String getZerosInfo() {
+        return zerosInfo;
+    }
+
+    public void setZerosInfo(String info) {
+        zerosInfo = info;
+    }
+
     @Override
     public String toString() {
-        long milliseconds = System.currentTimeMillis() - ts;
-        long seconds = (int) (milliseconds / 1000) % 60;
-        StringBuilder sb = new StringBuilder("Block:").append("\n");
-        sb.append("Id:").append(id).append("\n");
-        sb.append("Timestamp: ").append(ts).append("\n");
-        sb.append("Magic number: ").append(magicNum).append("\n");
-        sb.append("Hash of the previous block:").append("\n");
-        sb.append(prevHash).append("\n");
-        sb.append("Hash of the block:").append("\n");
-        sb.append(hash).append("\n");
-        sb.append("Block was generating for ").append(seconds).append(" seconds").append("\n");
+        String ls = System.lineSeparator();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Block:").append(ls);
+        sb.append("Created by miner # ").append(getMinerName()).append(ls);
+        sb.append("Id: ").append(getId()).append(ls);
+        sb.append("Timestamp: ").append(getTimeStamp()).append(ls);
+        sb.append("Magic number: ").append(getMagicNumber()).append(ls);
+        sb.append("Hash of the previous block:").append(ls);
+        sb.append(getPrevHash()).append(ls);
+        sb.append("Hash of the block:").append(ls);
+        sb.append(getHash()).append(ls);
+        sb.append("Block was generating for: ").append(getProofOfWork()).append(" seconds").append(ls);
+        sb.append(getZerosInfo()).append(ls);
 
         return sb.toString();
-    }
-
-    public String applySha256(String input) {
-        try {
-            /* Applies sha256 to our input */
-            byte[] hash = digest.digest(input.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
-            for (byte elem : hash) {
-                String hex = Integer.toHexString(0xff & elem);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String generateHash(int proof, long timeStamp) {
-        String zeros = "0".repeat(proof);
-        Random random = new Random(34564);
-        int magic;
-        String hash;
-        do {
-            magic = random.nextInt(1000000);
-            hash = applySha256( timeStamp + String.valueOf(id) + magic  + prevHash);
-        } while (!hash.startsWith(zeros));
-        magicNum = magic;
-        this.hash = hash;
-        return hash;
     }
 }
