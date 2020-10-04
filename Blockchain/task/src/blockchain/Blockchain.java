@@ -1,23 +1,18 @@
 package blockchain;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+
 
 /**
  * @author Dionysios Stolis 9/27/2020 <dionstol@gmail.com>
  */
 public class Blockchain implements Serializable {
 
-    public Blockchain instance = new Blockchain();
+    public static Blockchain instance = new Blockchain();
     private final ArrayList<Block> blockChain = new ArrayList<>();
     private final AtomicInteger currentId;
     private final AtomicInteger numZeros;
@@ -28,31 +23,53 @@ public class Blockchain implements Serializable {
     private final String decrease = "N was decreased by 1";
     private final String stays = "N stays the same";
 
-    public Blockchain(){
+    public Blockchain() {
         this.currentId = new AtomicInteger(1);
         this.numZeros = new AtomicInteger(0);
     }
 
-    public boolean addBlock(Block block){
-        synchronized (lockAdd){
-            if (validate(block)){
+    public boolean addBlock(Block block) {
+        synchronized (lockAdd) {
+            if (validate(block)) {
                 blockChain.add(block);
                 currentId.incrementAndGet();
-                // TODO Refactor Block class, add getter for proof and info subclass
+                if (block.getProofOfWork() > 2) {
+                    numZeros.decrementAndGet();
+                    block.setZerosInfo(decrease);
+                } else if (block.getProofOfWork() < 1) {
+                    block.setZerosInfo(increase + numZeros.incrementAndGet());
+                } else {
+                    block.setZerosInfo(stays);
+                }
+                return true;
             }
+            return false;
         }
     }
 
-    private boolean validate(Block block){
-        if (blockChain.isEmpty() && block.getPrevHash().equals("0")){
+    private boolean validate(Block block) {
+        if (blockChain.isEmpty() && block.getPrevHash().equals("0")) {
             return true;
         }
 
-        String zeros = new String(new char[numZeros.get()]).replace("\0","0");
+        String zeros = new String(new char[numZeros.get()]).replace("\0", "0");
         String bcPrevHash = getLastHash();
         String blockHash = block.getHash();
         String bPrevHash = block.getPrevHash();
         return blockHash.startsWith(zeros) && bPrevHash.equals(bcPrevHash);
+    }
+
+    public boolean validateBlockChain() {
+        if (blockChain.isEmpty()) {
+            return true;
+        }
+
+        for (int i = 1, n = blockChain.size(); i < n; i++) {
+            if (!validate(blockChain.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String getLastHash() {
@@ -63,56 +80,38 @@ public class Blockchain implements Serializable {
         return blockChain.size();
     }
 
-    private ExecutorService executor;
-
-    private int proof;
-
-    {
-        System.out.println("Enter how many zeros the hash must starts with:");
-        proof =  new Scanner(System.in).nextInt();
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ois.defaultReadObject();
+        if (!validateBlockChain()) {
+            throw new RuntimeException("Blockchain is not valid");
+        }
     }
 
-//    public Blockchain() {
-//        try {
-//          Blockchain blockchain = (Blockchain) SerializationUtils.deserialize();
-//          this.blocks = blockchain.blocks;
-//
-//        } catch (IOException | ClassNotFoundException e) {
-//            this.blocks = new ArrayList<>();
-//        }
-//    }
-
-    public void createBlock() {
-        executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> {
-            Miner miner = new Miner(this);
-            miner.run();
-        });
-//        if (!validate()){
-//            throw new IllegalArgumentException("Blockchain is not valid");
-//        }
-//        String prevHash = blocks.isEmpty() ? "0" : blocks.get(blocks.size() - 1).getHash();
-//        Block newBlock = new Block(blocks.size() + 1, System.currentTimeMillis(), prevHash, proof);
-//        blocks.add(newBlock);
+    public static Blockchain getInstance() {
+        return instance;
     }
 
-//    @Override
-//    public String toString() {
-//        return blocks.stream()
-//                .map(Block::toString)
-//                .collect(Collectors.joining("\n\n"));
-//    }
-//
-//    boolean validate() {
-//        for (int i = 1; i < blocks.size(); i++) {
-//            if (Objects.equals(blocks.get(i).getPrevHash(), blocks.get(i).getHash())) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-//
-//    public List<Block> getBlocks() {
-//        return blocks;
-//    }
+    public void printFirstNthBlocks(int max) {
+        int size = getSize();
+        int n = Math.min(max, size);
+        for (int i = 0; i < n; i++) {
+            System.out.println(blockChain.get(i));
+        }
+    }
+
+    public CurrentInfo getCurrentInfo() {
+        synchronized (lockGet) {
+            return new CurrentInfo(currentId.get(), numZeros.get(), getLastHash());
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Block block : blockChain) {
+            sb.append(block).append(System.lineSeparator());
+        }
+
+        return sb.toString();
+    }
 }
