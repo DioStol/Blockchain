@@ -1,9 +1,11 @@
 package blockchain;
 
+import java.io.Serializable;
+
 /**
  * @author Dionysios Stolis 10/4/2020 <dstolis@gmail.com>
  */
-class CurrentInfo {
+class CurrentInfo implements Serializable {
 
     private final int currentID;
     private final int numZeros;

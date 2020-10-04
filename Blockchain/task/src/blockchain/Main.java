@@ -5,7 +5,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
-    public static void main(String[] args) throws InterruptedException{
+    public static void main(String[] args) throws InterruptedException {
+
         Blockchain blockchain = Blockchain.getInstance();
 
         ExecutorService executor = Executors.newFixedThreadPool(15);

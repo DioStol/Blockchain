@@ -1,5 +1,6 @@
 package blockchain;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.concurrent.ThreadLocalRandom;
@@ -105,7 +106,7 @@ public class Block {
         StringBuilder sb = new StringBuilder();
 
         sb.append("Block:").append(ls);
-        sb.append("Created by miner # ").append(minerName).append(ls);
+        sb.append("Created by miner # ").append(getMinerName()).append(ls);
         sb.append("Id: ").append(getId()).append(ls);
         sb.append("Timestamp: ").append(getTimeStamp()).append(ls);
         sb.append("Magic number: ").append(getMagicNumber()).append(ls);
@@ -113,8 +114,8 @@ public class Block {
         sb.append(getPrevHash()).append(ls);
         sb.append("Hash of the block:").append(ls);
         sb.append(getHash()).append(ls);
-        sb.append("Block was generating for: ").append(proofOfWork).append(" seconds").append(ls);
-        sb.append(zerosInfo).append(ls);
+        sb.append("Block was generating for: ").append(getProofOfWork()).append(" seconds").append(ls);
+        sb.append(getZerosInfo()).append(ls);
 
         return sb.toString();
     }
