@@ -1,16 +1,19 @@
 package blockchain;
 
-import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
-    public static void main(String[] args) {
-        Blockchain blockchain = new Blockchain();
-        blockchain.createBlock();
-        try {
-            SerializationUtils.serialize(blockchain);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static void main(String[] args) throws InterruptedException{
+        Blockchain blockchain = Blockchain.getInstance();
+
+        ExecutorService executor = Executors.newFixedThreadPool(15);
+        for (int i = 0; i < 15; i++) {
+            executor.submit(new Miner());
         }
-        System.out.println(blockchain);
+
+        executor.awaitTermination(10, TimeUnit.SECONDS);
+        blockchain.printFirstNthBlocks(5);
     }
 }
